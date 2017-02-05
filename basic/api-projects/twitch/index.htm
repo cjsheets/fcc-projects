@@ -1,0 +1,188 @@
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+	<title>Chad Sheets - Twitch Status</title>
+  <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+	<style>
+		.site {
+      display: flex;
+      min-height: 100vh;
+      flex-direction: column;
+      font-family: Lato,sans-serif,verdana;
+      color: #FFFFFF;
+      margin: 0px;
+    } header, footer {
+      background: #0e9dd9
+
+    } .row {
+      display: flex;
+
+    } .container, .col, input {
+      flex: 1;
+
+    } .text-col {
+      align-self: center; 
+      padding: 0px 20px;
+
+    } .online {
+      background-color: #b8cca6;
+      margin-top: 4px;
+      color: #444444;
+      font-size: 0.9em;
+
+    } .offline, .offline a, .error {
+      background-color: #4a5e82;
+      margin-top: 4px;
+      font-style: italic;
+      color: #DDDDDD;
+
+    } .error {
+      background-color: #a62e4d;
+
+    } .small, .medium, .large {
+      align-self: center; 
+      margin: 4px;
+      padding: 10px 15px;
+      flex-grow: 1
+
+    } .medium {
+      flex-grow: 2
+
+    } .large {
+      flex-grow: 6
+
+    } a {
+      color: #444444;
+      text-decoration: none;
+
+    } a:hover {
+      text-decoration: underline;
+
+    } img {
+      max-width: 50px;
+      max-height: 50px;
+      border-radius: 50%;
+
+    } .icon {
+      padding: 2px 15px;
+
+    } input, button {
+       border: 1px solid #e5e4e7;
+       background: #efeef1;
+       box-shadow:none;
+       border-radius: 0px;
+       font-size: 0.9em;
+
+    } button, input[type=button] {
+        background: #6441a5;
+        border: 0px;
+        padding: 10px 15px;
+        font-size: 0.75em;
+        color: #FFFFFF;
+        cursor: pointer;
+    }
+	</style>
+  <script>
+  $( document ).ready(function() {
+
+    function queryAPI(user, obj, callback){
+      $.ajax({
+        url: 'https://wind-bow.hyperdev.space/twitch-api/' + obj + '/' + user,
+        dataType: 'jsonp',
+        success: function(data) {
+          callback(data);
+        }
+      });
+    }
+
+    function addRow(id){
+      $('main').append('<div class="row stream offline" id="' + id + '"><div class="col small icon"></div>\
+        <div class="col medium name"></div><div class="col large stream">Loading...</div></div>');
+    }
+
+    $('#update').click(function() {
+      var users = $('#users').val();
+      if(users.length > 1){
+        $('.stream').remove();
+        var aryUsers = users.trim().replace(/[\x22\x27]/g, '').replace(/[\x2C]/g, ' ').replace(/  /g, ' ').split(' ').sort();
+        $.each( aryUsers, function(key, val) {
+          addRow(val);
+          queryAPI(val, 'streams', function(data){
+            if(! data.error ){
+              if(data.stream){
+                $('#' + val + ' > .stream').text(data.stream.game + ': ' + data.stream.channel.status);
+                $('#' + val).addClass('online').removeClass('offline');
+              } else {
+                $('#' + val + ' > .stream').text('Offline').css('font-size', '0.8em');
+              }
+              queryAPI(val, 'users', function(data){
+                  $('#' + val + ' > .name').append('<a href="https://www.twitch.tv/' + val + '">' + val + '</a>');
+                  $('#' + val + ' > .icon').append('<a href="https://www.twitch.tv/' + val + '"><img src="' + data.logo + '"></a>');
+              });
+            } else {
+              $('#' + val + ' > .name').append(val);
+              $('#' + val + ' > .stream').text(data.message).css('font-size', '0.8em');
+              $('#' + val).addClass('error').removeClass('offline');
+            }
+          });
+        });
+      }
+    });
+
+    $('#users').keypress(function (e) {
+      if(e.which == 13){
+        $('#update').click();
+      }
+    });
+
+    $('#view').click(function(event) {
+      switch ($('#view').val()) {
+        case 'View :: All':
+          $('.online').hide();
+          $('.offline').show();
+          $('#view').val('View :: Online')
+          break;
+        case 'View :: Online':
+          $('.online').show();
+          $('.offline').hide();
+          $('#view').val('View :: Offline')
+          break;
+        case 'View :: Offline':
+          $('.online').show();
+          $('.offline').show();
+          $('#view').val('View :: All')
+          break;
+      }
+    });
+
+    if($('#users').val() == ''){
+      $('#users').val('ESL_SC2 OgamingSC2 cretetion freecodecamp storbeck habathcx RobotCaleb noobs2ninjas');
+      $('#update').click();
+    }
+  });
+  </script>
+</head>
+<body class="site">
+  <header>
+    <div class="row">
+      <div class="col text-col"><h2>Twitch Streams</h2></div>
+      <div class="col text-col" style="text-align: right;">
+          <input type="button" id="view" value="View :: All">
+      </div>
+    </div>
+  </header>
+  <main class="container">
+    <div class="row">
+      <div class="col">
+        <div class="row">
+          <input type="text" id="users" placeholder='Twitch Users'>
+          <button id="update">Update</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <footer style="padding: 5px 0px; text-align: center; font-size: 0.8em;">Chad Sheets - FreeCodeCamp</footer>
+</body>
+</html>

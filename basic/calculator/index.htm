@@ -1,0 +1,162 @@
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+	<title>Chad Sheets - Javascript Calculator</title>
+  <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+	<style>
+		body {
+      display: flex;
+      min-height: 100vh;
+      font-family: helvetica,arial,sans-serif;
+      color: #444444;
+      margin: 0px;
+      text-align: center;
+    } main {
+      padding: 20px;
+      margin: auto;
+      box-shadow: 0px 0px 12px rgba(0,0,0,0.25)
+    } div div {
+      float: left;
+      background-color: #f3f3f3;
+      border: 1px solid #dedede;
+      padding: 10px 0px;
+      width: 75px;
+      margin: 2px 5px;
+      cursor: pointer;
+    } .a, .c {
+      position: relative;
+      float: none;
+      background-color: #FFFFFF;
+      border: 0px;
+      padding: 0px;
+      width: 25px;
+      margin: 0px;
+      color: #999999;
+    } .a {
+      top: 18px;
+      right: -50px;
+      font-size: 0.75em;
+      width: 280px;
+      text-align: right;
+      height: 15px;
+    } .c {
+      top: 32px;
+      left: 15px;
+    } .e {
+      background-color: #498249;
+      border: 1px solid #005c00;
+      color: #FFFFFF;
+    } .i {
+      position: absolute;
+      top: 50px; left: 0px; right: 0px;
+      margin: auto;
+      color: #a12020;
+      background-color: #f7dada;
+      border: 1px solid #eab7b7;
+      padding: 20px;
+      width: 300px;
+    } .s, input {
+      background-color: #d4d4d4;
+      border: 1px solid #c6c6c6;
+    } input {
+      background-color: #ffffff;
+      width: 338px;
+      height: 40px;
+      border: 1px solid #dedede;
+      box-shadow:none;
+      border-radius: 0px;
+      font-size: 0.9em;
+      text-align: right;
+      padding: 5px 10px;
+      margin: 2px 0px;
+    }
+	</style>
+  <script>
+  $( document ).ready(function() {
+    $('#0,#1,#2,#3,#4,#5,#6,#7,#8,#9,#plus,#min,#dot,#mult,#div').click(function(){
+      $('#output').val($('#output').val() + $(this).text());
+    });
+    $('#c').click(function(){
+      $('#output').val('');
+      $('.a').text('');
+    });
+    $('#equal').click(function(){
+      var answer = doMath($('#output').val());
+      if(! answer ){
+        invalidInput('Input: "'+$('#output').val()+'" was not understood<br>Please try again');
+      } else {
+        $('.a').text($('#output').val() + ' =');
+        $('#output').val(answer);
+      }
+    });
+
+    function doMath(str){
+      // Convert string to parsable array
+      str = str.replace(/([\x2B])/g, ' a ').replace(/([\x58\x78\xD7\2A])/g, ' m ');
+      str = str.replace(/([\x2D])/g, ' s ').replace(/([\xF7\x2F])/g, ' d ');
+      var ary = str.trim().replace(/ +/g, ' ').split(' ');
+      // Parse integers and validate input
+      for(i=0; i<ary.length; i++){
+        if( i % 2 == 0 ) {
+          ary[i] = parseInt(ary[i]);
+          if( isNaN(ary[i])){ return; }
+        } else {
+          if(ary[i] != 'a' && ary[i] != 's' && ary[i] != 'm' && ary[i] != 'd') { return; }
+        }
+      }
+      // Do multiplication / division
+      for(i=0; i<(ary.length-1); i++){
+        if( i % 2 == 0 ) {
+          if(ary[i+1] == 'm'){
+            ary[i] = ary[i] * ary[i+2];
+          } else if(ary[i+1] == 'd') {
+            ary[i] = ary[i] / ary[i+2];
+          } else { continue; }
+          ary.splice(i+1, 2);
+          i=-1;
+        } else { continue; }
+      }
+      // Do addition / subtraction
+      for(i=0; i<(ary.length-1); i++){
+        if( i % 2 == 0 ) {
+          if(ary[i+1] == 'a'){
+            ary[i] = ary[i] + ary[i+2];
+          } else if(ary[i+1] == 's') {
+            ary[i] = ary[i] - ary[i+2];
+          } else { continue; }
+          ary.splice(i+1, 2);
+          i=-1;
+        } else { continue; }
+      }
+      return ary[0];
+    }
+
+    function invalidInput(str){ 
+      $('table').after('<div class="i">'+ str +'</div>');
+      $('.i').delay(2000).fadeOut();
+    }
+  });
+  </script>
+</head>
+<body>
+  <main><div id="a" class="a"></div>
+  <table><tr><div><div id="c" class="c">c</div>
+      <input id="output" type="text" autofocus>
+    </div></tr><tr><div>
+      <div id="7" >7</div><div id="8">8</div>
+      <div id="9">9</div><div id="div" class="s"> ÷ </div>
+    </div></tr><tr><div>
+      <div id="4" >4</div><div id="5">5</div>
+      <div id="6">6</div><div id="mult" class="s"> × </div>
+    </div></tr><tr><div>
+      <div id="1" >1</div><div id="2">2</div>
+      <div id="3">3</div><div id="min" class="s"> - </div>
+    </div></tr><tr><div>
+      <div id="dot">.</div><div id="0">0</div>
+      <div id="equal" class="e">=</div>
+      <div id="plus" class="s"> + </div>
+    </div></tr></table>
+  </main>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+  <title>Chad Sheets - Data Map</title>
+<!-- https://cdnjs.cloudflare.com/ajax/libs/d3/4.3.0/d3.min.js -->
+<script src="d3.js"></script>
+<script src="topojson.min.js"></script>
+
+<!-- <script src="http://d3js.org/topojson.v0.min.js"></script> -->
+<style>
+body, a{
+  margin: 0px;
+  font: 11px sans-serif;
+  color: #000000;
+  background: #2C71CE;
+}
+div, svg {
+  margin: auto;
+}
+.title text, .title-2 text, .title-3 text {
+  font: 25px sans-serif;
+  fill: #000;
+  text-anchor: middle;
+}
+#info {
+  position: absolute;
+  padding: 5px;
+  background: #333333;
+  color: #FFFFFF;
+  border-radius: 10px;
+}
+
+path {
+  stroke: #827553;
+  stroke-width: 0.25px;
+  fill: #E8D8B7;
+}
+
+</style>
+</head>
+<body>
+<div class="target"></div>
+<div id="info"></div>
+<script>
+// http://bl.ocks.org/d3noob/5193723
+// http://bl.ocks.org/patricksurry/6621971
+var url = 'https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/meteorite-strike-data.json';
+d3.select('#info').style("visibility", "hidden");
+forceSim(url, '.target');
+
+function forceSim(url, target) {
+  'use strict';
+
+  var width = window.innerWidth,
+    height = window.innerHeight,
+    maxlat = 83;
+
+  var projection = d3.geoMercator()
+    .scale(1)
+    .rotate([0,0])
+    .translate([width/2, height/2]);
+
+  var b = mercatorBounds(projection, maxlat),
+    s = width/(b[1][0]-b[0][0]),
+    scaleExtent = [s, 10*s];
+
+  projection.scale(scaleExtent[0])
+
+  var path = d3.geoPath(projection);
+
+  var scaleMass = d3.scaleSqrt()
+  .domain([0, 23000000])
+  .range([0, 30]);
+
+  var tlast = {k: 305.57749243409523, x: -267114.46086470154, y: -163253.53594467504}, 
+    slast = 305;
+
+  var zoom = d3.zoom()
+    .scaleExtent(scaleExtent)
+    .on("zoom", redraw);
+
+  var svg = initSVG(target),
+    g = svg.append("g");
+//https://raw.githubusercontent.com/cjsheets/d3-projects/master/world-110m2.json
+  d3.json("world-110m2.json", function(error, topology) {
+
+      g.selectAll("path")
+        .data(topojson.feature(topology, topology.objects.countries).features)
+        .enter()
+        .append("path")
+        .attr("d", path);
+
+    d3.json(url, function(err,json) {
+
+      g.selectAll("circle")
+        .data(json.features)
+        .enter()
+          .append("circle")
+          .on("mouseover", function(d, i){ onMouseOver.call(this, d, i); })
+          .on("mouseout", function(d, i){ onMouseOut.call(this, d, i); })
+          .attr("cx", function(d) {
+                 return projection([d.properties.reclong, d.properties.reclat])[0];
+          })
+          .attr("cy", function(d) {
+                 return projection([d.properties.reclong, d.properties.reclat])[1];
+          })
+          .attr("r", function(d){ d.properties.rad = scaleMass(d.properties.mass); return d.properties.rad  * (projection.scale()/150)})
+          .style("fill", "green")
+          .attr("fill-opacity", "0.5")
+          .style("stroke", "green");
+    redraw();
+    });
+  });
+
+  function redraw() {
+    if (d3.event) { 
+      if(d3.event.transform.k < 100) {
+        console.log('1');
+        var d3Event = {type: "zoom", transform: {k: 305.57749243409523, x: -267114.46086470154, y: -163253.53594467504}, sourceEvent: "wheel" };
+        console.log('2');
+      } else {
+        console.log(d3.event);
+        var d3Event = d3.event;
+
+      }
+      var scale = d3Event.transform.k,
+      t = d3Event.transform;
+      if (scale != slast) {
+        console.log('scale != slast');
+        projection.scale(scale);
+      } else {
+        console.log('scale == slast');
+        console.log(t.y + ' - ' + tlast.y);
+        var dx = t.x-tlast.x,
+        dy = t.y-tlast.y,
+        yaw = projection.rotate()[0],
+        tp = projection.translate();
+        console.log(tp + ' - ' + yaw + ' - ' + dy + ' - ' + dx);
+        projection.rotate([yaw+360.*dx/width*scaleExtent[0]/scale, 0, 0]);
+        var b = mercatorBounds(projection, maxlat);
+        if (b[0][1] + dy > 0) dy = -b[0][1];
+        else if (b[1][1] + dy < height) dy = height-b[1][1];
+        projection.translate([tp[0],tp[1]+dy]);
+      }
+      slast = scale;
+      tlast = t;
+    }
+
+    g.selectAll('circle')
+      .attr("r", function(d){
+        return d.properties.rad * (projection.scale()/150) 
+      })
+      .attr("cx", function(d) {
+        return projection([d.properties.reclong, d.properties.reclat])[0];
+      })
+      .attr("cy", function(d) {
+        return projection([d.properties.reclong, d.properties.reclat])[1];
+      });
+    g.selectAll('path')
+      .attr('d', path);
+
+  }
+
+  function mercatorBounds(projection, maxlat) {
+    var yaw = projection.rotate()[0],
+    xymax = projection([-yaw+180-1e-6,-maxlat]),
+    xymin = projection([-yaw-180+1e-6, maxlat]);
+    return [xymin,xymax];
+  }
+
+  function initSVG(target){
+    var svg = d3.selectAll('body')
+      .append('svg')
+        .attr("width", width)
+        .attr("height", height)
+        .call(zoom)
+        .on("click", redraw)
+        .append("g");
+    return svg;
+  };
+
+  function onMouseOver(d, i){
+    var p = d.properties,
+      text = "Fall: "+p.fall+"<br>Mass: "+p.mass+"<br>Name: "+p.name+
+        "<br>Type: "+p.nametype+"<br>Class: "+p.recclass+
+        "<br>Lat: "+p.reclat+"<br>Year:"+p.year;
+    d3.select('#info')
+      .style('left', (projection([d.properties.reclong, d.properties.reclat])[0] +
+        50) + 'px')
+      .style('top', (projection([d.properties.reclong, d.properties.reclat])[1] - 50) + 'px')
+      .html(text)
+      .style('visibility', 'visible');
+  };
+
+  function onMouseOut(d, i){
+    d3.select("#info")
+      .style("visibility", "hidden");
+  };
+
+  function appendTitle(txt, x, y, classname){
+    svg.append("g")
+      .attr("class", classname)
+      .append("text")
+        .attr("x", x)
+        .attr("y", y)
+        .text(txt);
+  };
+}
+
+</script>
+</body>
+</html>

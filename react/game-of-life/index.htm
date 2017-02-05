@@ -1,0 +1,203 @@
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+  <title>Chad Sheets - Game of Life</title>
+<link rel='stylesheet' type='text/css' href='style.css' />
+<script src='https://unpkg.com/react@15.3.2/dist/react.js'></script>
+<script src='https://unpkg.com/react-dom@15.3.2/dist/react-dom.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js'></script>
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+<script type='text/babel'>
+class GameOfLife extends React.Component {
+  constructor(props) {
+    super(props);
+    this.stepMatrix = this.stepMatrix.bind(this);
+    this.clearMatrix = this.clearMatrix.bind(this);
+    this.checkNeighbors = this.checkNeighbors.bind(this);
+    this.compareGens = this.compareGens.bind(this);
+    this.setRunning = this.setRunning.bind(this);
+    this.toggleRunning = this.toggleRunning.bind(this);
+    this.handleBoardChange = this.handleBoardChange.bind(this);
+    this.state = {matrix: [], gen: 1, running: false, intervalID: ''}
+  }
+
+  componentWillMount() {
+    this.setState({matrix: this.initMatrix(this.props.rows, this.props.cols, false)});
+  }
+   
+   componentDidMount() {
+      this.setRunning(true);
+   }
+
+  initMatrix(rows, cols, zeroFill) {
+    var matrix = [];
+    for(var row=0; row<rows; row++){
+      var cells = [];
+      for(var col=0; col<cols; col++){
+        (zeroFill) ? cells.push(0) : cells.push(Math.round(Math.random()*2/3));
+      }
+      matrix.push(cells);
+    }
+    return matrix;
+  }
+
+  clearMatrix() {
+    this.setRunning(false);
+    this.setState({matrix: this.initMatrix(this.props.rows, this.props.cols, true), gen: 1});
+  }
+
+  stepMatrix(){
+    var matrix = [];
+    for(var row=0; row<this.props.rows; row++){
+      var cells = [];
+      for(var col=0; col<this.props.cols; col++){
+        switch(this.checkNeighbors(row, col)){
+          case 2: cells.push(this.state.matrix[row][col]); break;
+          case 3: cells.push(1); break;
+          default: cells.push(0); break;
+        }
+      }
+      matrix.push(cells);
+    }
+    if(this.compareGens(matrix)){ this.setState({paused: true}); }
+    this.setState({matrix: matrix, gen: this.state.gen + 1});
+  }
+
+  checkNeighbors(r, c){
+    var n = 0, m = this.state.matrix;
+
+    if(c != 0){ // Check if cell is top or left
+      n += (r != 0) ? m[r][c-1] + m[r-1][c] + m[r-1][c-1] : m[r][c-1] + m[r+1][c-1];
+      n += (r != this.props.rows - 1) ? m[r+1][c-1] : 0;
+    } else { n += (r != 0) ? m[r-1][c] : 0; }
+
+    if(c != this.props.cols - 1){ // Check if cell is bottom or right
+      n += (r != this.props.rows - 1) ? m[r][c+1] + m[r+1][c] + m[r+1][c+1] : m[r][c+1];
+      n += (r != 0) ? m[r-1][c+1] : 0;
+    } else { n += (r != this.props.rows - 1) ? m[r+1][c] : 0; }
+
+    return n;
+  }
+
+  compareGens(newMatrix){ // True if newMatrix == oldMatrix
+    var oldMatrix = this.state.matrix;
+
+    for(var row=0; row<oldMatrix.length; row++){
+      for(var col=0; col<oldMatrix[row].length; col++){
+        if(newMatrix[row][col] == oldMatrix[row][col]){ return false; }
+      }
+    }
+    return true;
+  }
+
+  setRunning(running){
+    if(running){
+      this.setState({running: true, intervalID: setInterval(this.stepMatrix, this.props.speed)});
+    } else {
+      this.setState({running: false, intervalID: clearInterval(this.state.intervalID)});
+    }
+  }
+
+  toggleRunning(){
+    if(this.state.running){
+      this.setRunning(false);
+    } else {
+      this.setRunning(true);
+    }
+  }
+
+  handleBoardChange(id, alive){
+    var ary = id.split('-'), m = this.state.matrix;
+    m[ary[0]][ary[1]] = alive;
+    this.setState({matrix: m});
+  }
+
+  render() {
+    var gameBoard = [];
+    for(var i=0; i<this.props.rows; i++)
+      gameBoard.push(<BoardRow cols={this.state.matrix[i]} row={i} key={i} onBoardChange={this.handleBoardChange} />);
+    return (
+      <div>
+        <header>
+          <div className="row">
+            <div className="col left-col"><h2>Free Code Camp</h2></div>
+            <div className="col right-col">
+              <button onClick={this.stepMatrix}>Generation {this.state.gen}</button>
+              <button onClick={this.toggleRunning} className={(this.state.running) ? "" : "paused"}>
+                {(this.state.running) ? "Pause" : "Resume"}</button>
+              <button onClick={this.clearMatrix}>Clear</button>
+            </div>
+          </div>
+        </header>
+        <main>
+         {gameBoard}
+        </main>
+        <footer>
+          <div className="foot">
+            Chad Sheets - FreeCodeCamp
+          </div>
+        </footer>
+      </div>
+    );
+  }
+}
+
+class BoardRow extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleRowChange = this.handleRowChange.bind(this);
+    this.state = {cols: this.props.cols, row: this.props.row}
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({cols: nextProps.cols, row: nextProps.row});
+  }
+
+  handleRowChange(id, alive) {
+    this.props.onBoardChange(id, alive);
+  }
+
+  render() {
+    var boardCells = [];
+    for(var i=0; i<this.state.cols.length; i++)
+      boardCells.push(<BoardCell alive={(this.state.cols[i] == 1) ? ' alive' : ''} id={this.state.row + '-' + i}
+        onRowChange={this.handleRowChange} key={i} />);
+    return (
+      <div className="row">{boardCells}</div>
+    );
+  } 
+}
+
+class BoardCell extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleCellChange = this.handleCellChange.bind(this);
+    this.state = {alive: this.props.alive, id: this.props.id}
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({alive: nextProps.alive, id: nextProps.id});
+  }
+
+  handleCellChange(e) {
+    this.props.onRowChange(this.props.id, !e.target.alive);
+    this.setState({alive: !e.target.alive});
+  }
+
+  render() {
+    return (
+      <div className={"col cell" + this.props.alive} id={this.props.id} onClick={this.handleCellChange}></div>
+    );
+  }
+}
+
+GameOfLife.defaultProps = { rows: 50, cols: 70, speed: 100 }
+
+ReactDOM.render(<GameOfLife />, document.getElementById('target'));
+</script>
+</head>
+<body>
+<div id='target'></div>
+</body>
+</html>

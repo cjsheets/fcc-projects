@@ -1,0 +1,475 @@
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+  <title>Chad Sheets - Dungeon Crawler</title>
+<link rel='stylesheet' type='text/css' href='style.css' />
+<script src='https://unpkg.com/react@15.3.2/dist/react.js'></script>
+<script src='https://unpkg.com/react-dom@15.3.2/dist/react-dom.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js'></script>
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.3/pako_inflate.min.js'></script>
+<script type='text/babel'>
+/* -----------------------------------|
+ *|  Helper Methods
+ */
+
+Uint8Array.prototype.push = function(i) {
+    this[this.length] = i;
+};
+
+Uint8Array.prototype.get = function(ary) {
+    return this[(ary[1] * this.width) + ary[0]];
+};
+
+Uint8Array.prototype.put = function(ary, i) {
+    this[(ary[1]*this.width) + ary[0]] = i;
+};
+
+Uint8Array.prototype.setWidth = function(w) {
+    this.width = w; 
+};
+
+/* -----------------------------------|
+ *|  Game Engine
+ */
+
+function Game() {
+  /*  0 = wall      2 = hero       4:10 = weapon      20 = boss
+   *  1 = empty     3 = XP         11:19 = enemy
+   */
+
+  this.width      = 100; /* map */
+  this.height     = 100;
+  this.xViewport  = [0, 60];  /* viewport */
+  this.yViewport  = [0, 30];
+  this.shiftAt    = 4;
+  this.shiftBy    = 10;
+  this.iteration  = 0;
+  this.board      = new Uint8Array();
+  this.updated    = []
+};
+
+Game.prototype.fullRender = function() {
+  for(var i=0; i<(this.height); i++) this.updated[i] = true;
+};
+
+Game.prototype.initViewport = function() {
+  var ary = this.heroPos;
+  if(ary[0] < this.xViewport[0] + this.shiftAt) {
+    var offset = (this.xViewport[0] <= this.shiftBy) ? 
+      this.xViewport[0] : this.xViewport[0] - ary[0] - 4;
+    this.xViewport = this.xViewport.map( x => x - offset );
+  } 
+  if(ary[0] > this.xViewport[1] - this.shiftAt) {
+    var offset = (this.xViewport[1] >= this.width - this.shiftBy) ? 
+      this.width - this.xViewport[1] : ary[0] - this.xViewport[1] + 4;
+    this.xViewport = this.xViewport.map( x => x + offset );
+  } 
+  if(ary[1] < this.yViewport[0] + this.shiftAt) {
+    var offset = (this.yViewport[0] <= this.shiftBy) ? 
+      this.yViewport[0] : this.yViewport[0] - ary[1] - 4;
+    this.yViewport = this.yViewport.map( y => y - offset );
+  } 
+  if(ary[1] > this.yViewport[1] - this.shiftAt) {
+    var offset = (this.yViewport[1] >= this.height - this.shiftBy) ? 
+      this.height - this.yViewport[1] : ary[1] - this.yViewport[1] + 4;
+    this.yViewport = this.yViewport.map( y => y + offset );
+  }
+  //console.log(this.yViewport + ' ' + this.xViewport + ' ' + this.heroPos);
+};
+
+Game.prototype.adjustViewport = function(ary) {
+  if(ary[0] < this.xViewport[0] + this.shiftAt) {
+    var offset = (this.xViewport[0] <= this.shiftBy) ? 
+      this.xViewport[0] : this.shiftBy;
+    this.xViewport = this.xViewport.map( x => x - offset );
+    this.fullRender();
+  } else if(ary[0] > this.xViewport[1] - this.shiftAt) {
+    var offset = (this.xViewport[1] >= this.width - this.shiftBy) ? 
+      this.width - this.xViewport[1] : this.shiftBy;
+    this.xViewport = this.xViewport.map( x => x + offset );
+    this.fullRender();
+  } else if(ary[1] < this.yViewport[0] + this.shiftAt) {
+    var offset = (this.yViewport[0] <= this.shiftBy) ? 
+      this.yViewport[0] : this.shiftBy;
+    this.yViewport = this.yViewport.map( y => y - offset );
+    this.fullRender();
+  } else if(ary[1] > this.yViewport[1] - this.shiftAt) {
+    var offset = (this.yViewport[1] >= this.height - this.shiftBy) ? 
+      this.height - this.yViewport[1] : this.shiftBy;
+    this.yViewport = this.yViewport.map( y => y + offset );
+    this.fullRender();
+  }
+};
+
+Game.prototype.validMove = function(ary) {
+  this.adjustViewport(ary);
+  switch(this.board.get(ary)) {
+    case 0: return false;
+    case 1: return true;
+    case 3: this.giveXP(10); return true;
+    case 4: this.giveHealth(5); return true;
+    case 5: this.giveWeapon(3, 'club'); return true;
+    case 6: this.giveWeapon(4, 'mace'); return true;
+    case 7: this.giveWeapon(5, 'knife'); return true;
+    case 8: this.giveWeapon(6, 'sword'); return true;
+    case 9: this.giveWeapon(7, 'pike'); return true;
+    case 10: this.giveWeapon(8, 'wand'); return true;
+    default: 
+      if(this.fightEnemy(this.board.get(ary))){
+        return true;
+      } else {
+        return false;
+      }
+  }
+};
+
+Game.prototype.gameOver = function(win) {
+  if(win){
+    alert('You\'ve Won!!');
+  } else {
+    alert('You\'ve Lost, Try Again.');
+  }
+  this.reset();
+};
+
+Game.prototype.reset = function() {
+  location.reload();
+};
+
+
+Game.prototype.choseWeighted = function(){
+  var len = arguments[0].length, rand = Math.random()*(len);
+  if(arguments[1] == undefined) {
+    return arguments[0][Math.floor(rand)];
+  } else {
+    var prob = 0;
+    for(var i=0; i<len; i++){
+      prob += arguments[1][i];
+      if(rand < prob * len){ return arguments[0][i]; }
+    }
+  }
+};
+
+/* -----------------------------------|
+ *|  Hero
+ */
+
+function Hero() {
+  Game.call(this);
+
+  this.setHero();
+};
+
+
+// Inherit Game
+Hero.prototype = Object.create(Game.prototype);
+// Correct the constructor, initially pointing to Game
+Hero.prototype.constructor = Hero;
+
+Hero.prototype.setHero = function() {
+  this.heroPos      = [0, 0];
+  this.health       = 100;
+  this.weapon       = 1;
+  this.weaponName   = 'stick';
+  this.attack       = 1;
+  this.level        = 1;
+  this.nextLvlXP    = 50
+  this.xp           = 0;
+};
+
+Hero.prototype.moveHero = function(x, y) {
+  for(var i=0; i<(this.height); i++) this.updated[i] = false;
+  var newHero = [this.heroPos[0] + x, this.heroPos[1] + y];
+  if(this.validMove(newHero)) {
+    this.board.put(this.heroPos, 1);
+    this.updated[this.heroPos[1]] = true;
+    this.updated[newHero[1]] = true;
+    this.heroPos = newHero;
+    this.board.put(this.heroPos, 2);
+  }
+};
+
+Hero.prototype.giveXP = function(XP) {
+  this.xp += XP;
+  if(this.xp >= this.nextLvlXP){
+    this.level++;
+    this.nextLvlXP += 50 + (10 * this.level)
+    this.attack = Math.floor(this.weapon * 1.25 / 2 + this.level / 2);
+  }
+};
+
+Hero.prototype.giveHealth = function(health) {
+  this.health += health;
+  if(this.health <= 0){
+    this.gameOver(false);
+  }
+};
+
+Hero.prototype.giveWeapon = function(damage, name) {
+  if(damage > this.weapon) {
+    this.weapon       = damage;
+    this.weaponName   = name;
+    this.attack = Math.floor(this.weapon * 1.25 / 2 + this.level / 2);
+  }
+};
+
+Hero.prototype.fightEnemy = function(enemyStrength) {
+  var heroWeight = this.attack / 10;
+  var enemyWeight = (enemyStrength - 10) / 10;
+  enemyWeight += (enemyStrength == 20) ? 0.6 : 0;
+  var weights = [heroWeight / (enemyWeight + heroWeight),
+    enemyWeight / (enemyWeight + heroWeight)]
+  if(this.choseWeighted([0, 1], weights) == 0){
+    this.giveHealth(-2);
+    this.giveXP(10);
+    if(enemyStrength == 20) { this.gameOver(true) } 
+    return true;
+  } else {
+    this.giveHealth(-10);
+    return false;
+  }
+};
+
+/* -----------------------------------|
+ *|  Dungeon
+ */
+
+function Dungeon(level) {
+  Hero.call(this);
+  this.level = level
+  this.board = pako.inflate(this.loadAssets('map', this.level));
+};
+
+// Inherit Hero
+Dungeon.prototype = Object.create(Hero.prototype);
+// Correct the constructor, initially pointing to Hero
+Dungeon.prototype.constructor = Dungeon;
+
+Dungeon.prototype.init = function() {
+  this.iteration = 0;
+  this.heroPos = this.choseWeighted(this.loadAssets('heroPos', this.level));
+  this.initViewport();
+  this.moveHero(0, 0);
+  ['boss', 'enemies', 'weapons', 'xp', 'health'].map(function(asset){
+    var def = this.loadAssets(asset, this.level);
+    for(var i=0; i<def[0]; i++) this.placeAsset(def[1], def[2]);
+  }, this);
+  this.fullRender();
+};
+
+Dungeon.prototype.placeAsset = function(aryTypes, xy) {
+  var placed = false, type = this.choseWeighted(aryTypes);
+  do {
+    var randX = Math.floor(Math.random() * (xy[2] - xy[0] + 1)) + xy[0];
+    var randY = Math.floor(Math.random() * (xy[3] - xy[1] + 1)) + xy[1];
+    if(this.board.get([randX, randY]) == 1){
+      this.board.put([randX, randY], type);
+      placed = true;
+    }
+  } while (! placed);
+};
+
+Dungeon.prototype.loadAssets = function(asset, level) {
+  switch(asset) {
+    case 'heroPos': switch(level) {
+      case 1: return [[4, 4], [9, 70], [41, 2], [83, 47]];
+      }
+    case 'xp': switch(level) {
+      case 1: return [25, [3], [4,4,85,76]];
+      }
+    case 'health': switch(level) {
+      case 1: return [15, [4], [4,4,85,76]];
+      }
+    case 'weapons': switch(level) {
+      case 1: return [6, [5,6,7,8,9,10], [4,4,85,76]];
+      }
+    case 'enemies': switch(level) { /* [ # to place , [types], [x1, y1, x2, y2] ] */
+      case 1: return [15, [11,12,13,14,15], [4,4,85,76]];
+      }
+    case 'boss': switch(level) {
+      case 1: return [1, [20], [4,4,85,76]];
+      }
+    case 'map': switch(level) {
+      case 1: return [120,156,237,214,217,18,194,48,8,5,208,242,255,63,237,56,211,37,16,32,11,55,213,42,60,56,218,4,78,72,
+    141,118,219,190,34,104,15,68,9,171,14,51,230,184,73,99,168,187,202,144,185,138,177,207,238,238,142,202,
+    112,13,86,122,202,104,247,65,90,224,13,165,15,193,1,12,79,14,24,239,75,199,204,58,141,122,140,162,200,245,
+    94,43,230,244,209,19,213,109,172,214,104,84,163,13,107,244,220,165,57,131,107,17,195,70,249,197,89,163,
+    170,117,147,113,12,201,137,122,122,192,144,173,44,53,220,93,193,24,245,157,193,27,198,140,166,222,19,
+    93,70,160,190,98,200,154,43,140,109,169,81,126,174,135,67,82,151,33,175,6,67,175,246,60,67,63,111,48,227,
+    218,123,195,232,190,251,251,28,243,44,56,123,213,50,216,57,240,140,64,31,210,16,255,27,87,9,55,123,208,224,
+    179,27,249,99,125,156,115,42,195,253,221,32,86,99,186,15,35,241,152,187,200,144,57,119,24,202,243,19,222,112,
+    187,224,169,231,235,53,29,102,16,139,242,66,26,117,146,133,130,12,109,92,246,101,46,140,138,53,14,26,108,212,
+    75,211,246,215,108,220,94,131,187,180,231,27,246,247,4,100,248,223,19,43,35,110,180,51,86,27,237,159,230,176,
+    113,110,163,189,151,207,52,100,5,192,211,102,26,227,6,125,178,143,198,241,25,144,248,91,254,216,142,17,228,
+    134,21,31,110,48,6,79,219,148,129,235,195,70,33,245,39,254,113,48,198,57,134,33,108,3,216,74,26,48,60,141,127,
+    50,50,50,50,50,50,50,50,50,126,41,94,43,112,7,168];
+    }
+  }
+};
+
+
+/* -----------------------------------|
+ *|  Global Intialization
+ */
+
+var $window       = $(window);
+var keyLeft      = 37;
+var keyRight     = 39;
+var keyUp        = 38;
+var keyDown      = 40;
+
+var dungeon          = new Dungeon(1);
+
+dungeon.board.setWidth(dungeon.width);
+dungeon.init();
+
+
+/* -----------------------------------|
+ *|  Event Listeners
+ */
+function addListeners() {
+  $window.keydown(function(e){ handleKeydown(e); });
+}
+
+function handleKeydown(e) {
+  switch(e.which){
+    case keyLeft: dungeon.moveHero(-1,0); break;
+    case keyRight: dungeon.moveHero(1,0); break;
+    case keyUp: dungeon.moveHero(0,-1); break;
+    case keyDown: dungeon.moveHero(0,1); break;
+  }
+  render();
+}
+
+class DungeonCrawler extends React.Component {
+  constructor(props) {
+    super(props);
+    this.toggleLights = this.toggleLights.bind(this);
+    this.handleReset = this.handleReset.bind(this);
+    this.state = {game: this.props.game, lights: true};
+  }
+
+  toggleLights(e) {
+    if(this.state.lights){
+      this.setState({lights: false}) /* Off */
+      this.props.game.fullRender();
+    } else {
+      this.setState({lights: true}) /* On */
+    }
+  }
+
+  handleReset(e) {
+    this.props.game.reset();
+  }
+
+  render() {
+    var gameBoard = [];
+    for(var i=0; i<this.props.game.height; i++) {
+      if(i >= this.props.game.yViewport[0] && i < this.props.game.yViewport[1]) {
+        gameBoard.push(<BoardRow game={this.props.game} row={i} lights={this.state.lights} key={i} />);
+      }
+    }
+    return (
+      <div>
+        <header>
+          <div className="row">
+            <div className="col left-col"><h2>FCC - Dungeon Crawler</h2></div>
+            <div className="col right-col">
+              <button onClick={this.toggleLights} className={(this.state.lights) ? "lights" : ""}>
+                {(this.state.lights) ? "Lights: ON" : "Lights: OFF"}</button>
+              <button onClick={this.handleReset}>Reset</button>
+            </div>
+          </div>
+          <div className="row scoreboard">
+            <div className="col score"></div>
+            <div className="col score"><b>Health:</b><br />{this.props.game.health}</div>
+            <div className="col score"><b>Weapon:</b><br />{this.props.game.weaponName}</div>
+            <div className="col score"><b>Attack:</b><br />{this.props.game.attack}</div>
+            <div className="col score"><b>Level:</b><br />{this.props.game.level}</div>
+            <div className="col score"><b>Next Level:</b><br />
+            {this.props.game.nextLvlXP - this.props.game.xp}xp</div>
+            <div className="col score"><b>Dungeon:</b><br />1</div>
+            <div className="col score"></div>
+          </div>
+        </header>
+        <main>
+         {gameBoard}
+        </main>
+        <footer>
+          <div className="foot">
+            Chad Sheets - FreeCodeCamp
+          </div>
+        </footer>
+      </div>
+    );
+  }
+}
+
+class BoardRow extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    if(this.props.lights) {
+      return nextProps.game.updated[nextProps.row];
+    } else {
+      return true;
+    }
+  }
+
+  render() {
+    var boardCells = [];
+    for(var i=0; i<this.props.game.width; i++){
+      if(i >= this.props.game.xViewport[0] && i < this.props.game.xViewport[1]) {
+        if(this.props.lights){
+          var cellType = this.props.game.board[(this.props.row*this.props.game.width) + i];
+        } else {
+          var p = this.props.game.heroPos, j = this.props.row;
+          if( i>=p[0]-3 && i<=p[0]+3 && j>=p[1]-6 && j<=p[1]+6 || 
+              i>=p[0]-6 && i<=p[0]+6 && j>=p[1]-3 && j<=p[1]+3 ||
+              i>=p[0]-4 && i<=p[0]+4 && j>=p[1]-5 && j<=p[1]+5 || 
+              i>=p[0]-5 && i<=p[0]+5 && j>=p[1]-4 && j<=p[1]+4) {
+            var cellType = this.props.game.board[(this.props.row*this.props.game.width) + i];
+          } else {
+            var cellType = 100;
+          }
+        }
+        boardCells.push(<BoardCell type={cellType} id={this.props.row + '-' + i} key={i} />);
+      }
+    }
+    return (<div className="row">{boardCells}</div>);
+  } 
+}
+
+class BoardCell extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+      return (this.props.type == nextProps.type) ? false : true;
+  }
+
+  render() {
+    return (<div className={"col cell type-" + this.props.type} id={this.props.id}></div>);
+  }
+}
+
+function render(){
+  console.log('render');
+  ReactDOM.render(<DungeonCrawler game={dungeon} />, document.getElementById('target'));
+}
+
+addListeners();
+render();
+
+
+</script>
+</head>
+<body>
+<div id='target'></div>
+</body>
+</html>

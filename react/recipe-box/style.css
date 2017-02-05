@@ -1,0 +1,110 @@
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:600);
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  font-family: Lato,sans-serif,verdana;
+  color: #333333;
+  background: #CCCCCC;
+  margin: 0px; }
+
+header, footer {
+  background: #3b5998; 
+  color: #FFFFFF;}
+
+table {
+  font-size: 1em; }
+
+ #target {
+  min-height: 100vh;}
+.row {
+  display: flex;
+
+}
+#main, .col, input {
+  flex: 1;
+
+} .text-col {
+  align-self: center; 
+  padding: 0px 20px;
+
+} .right-col {
+  text-align: right; 
+
+} .left-col {
+  text-align: left;
+  color: #FFFFFF;
+  padding: 0px 20px;
+
+}
+
+.ui-draggable, .ui-droppable {
+  background-position: top; }
+
+label, input {
+  display: block; }
+
+input.text {
+  margin-bottom: 12px;
+  width: 95%;
+  padding: .4em; }
+
+fieldset {
+  padding: 0 0 40px;
+  border: 0;
+  margin-top: 25px; }
+
+h1 {
+  font-size: 1.2em;
+  margin: .6em 0; }
+
+div#users-contain {
+  width: 350px;
+  margin: 20px 0; }
+
+div#users-contain table {
+  margin: 1em 0;
+  border-collapse: collapse;
+  width: 100%; }
+
+div#users-contain table td, div#users-contain table th {
+  border: 1px solid #eee;
+  padding: .6em 10px;
+  text-align: left; }
+
+.ui-dialog .ui-state-error {
+  padding: .3em; }
+
+.validateTips {
+  border: 1px solid transparent;
+  padding: 0.3em; }
+
+/*# sourceMappingURL=style.css.map */
+
+p {
+  border-bottom: 1px solid #DDDDDD;
+  padding-bottom: 10px;
+}
+
+.recipeOptions {
+  float: right;
+  padding-top: 20px; 
+}
+
+.ui-state-active,
+.ui-widget-content .ui-state-active,
+.ui-widget-header .ui-state-active,
+a.ui-button:active,
+.ui-button:active,
+.ui-button.ui-state-active:hover {
+  border: 1px solid #6582c1;
+  background: #6582c1;
+  font-weight: normal;
+  color: #ffffff;
+}
+.ui-icon-background,
+.ui-state-active .ui-icon-background {
+  border: #6582c1;
+  background-color: #ffffff;
+}
+

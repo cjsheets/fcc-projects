@@ -1,0 +1,132 @@
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+	<title>Chad Sheets - Camper Leaderboard</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<script src="https://unpkg.com/react@15.3.2/dist/react.js"></script>
+<script src="https://unpkg.com/react-dom@15.3.2/dist/react-dom.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+<script type='text/babel'>
+class AddRow extends React.Component{
+  constructor(props) {
+    super(props);    
+  }
+
+  render() {
+    return (
+      <div className="row stream" style={this.props.background}>
+        <div className="col small">{this.props.id}</div>
+        <div className="col small icon"><img src={this.props.img} /></div>
+        <div className="col medium stream">{this.props.username}</div>
+        <div className="col medium name">{this.props.recent}</div>
+        <div className="col medium name">{this.props.alltime}</div>
+      </div>
+    );
+  }
+};
+
+class Main extends React.Component{
+  constructor(props) {
+    super(props);
+    this.state = {recent: '', alltime: '', sort: 'recent'}
+    this.sortRecent = this.sortRecent.bind(this);
+    this.sortAllTime = this.sortAllTime.bind(this);
+  }
+
+  componentDidMount() {
+      var parent = this;
+      $.getJSON('https://fcctop100.herokuapp.com/api/fccusers/top/recent', function (data) {
+          parent.setState({ recent: data });
+      });
+      $.getJSON('https://fcctop100.herokuapp.com/api/fccusers/top/alltime', function (data) {
+          parent.setState({ alltime: data });
+      });
+  }
+
+  sortRecent(event) {
+    this.setState({sort: 'recent'});
+  }
+
+  sortAllTime(event) {
+    this.setState({sort: 'alltime'});
+  }
+
+  render() {
+    var rows = [];
+    if (this.state.sort == 'recent') {
+      for (var i=0; i<this.state.recent.length; i++) {
+        var hexBgColor = {
+          background: ColorLuminance("006400", - (((i+1) / this.state.recent.length)))
+        };
+        rows.push( <AddRow key={i} username={this.state.recent[i].username}
+            img={this.state.recent[i].img} id={i}
+            alltime={this.state.recent[i].alltime}
+            recent={this.state.recent[i].recent}
+            background={hexBgColor} /> );
+      }
+    } else {
+      for (var i=0; i<this.state.alltime.length; i++) {
+        var hexBgColor = {
+          background: ColorLuminance("006400", - (((i+1) / this.state.recent.length)))
+        };
+        rows.push( <AddRow key={i} username={this.state.alltime[i].username}
+            img={this.state.alltime[i].img} id={i}
+            alltime={this.state.alltime[i].alltime}
+            recent={this.state.alltime[i].recent} 
+            background={hexBgColor} /> );
+      }
+    }
+
+    var sortRecentLink = <a href="#" onClick={this.sortRecent}>Past 30 Days</a>
+    var sortAllTimeLink = <a href="#" onClick={this.sortAllTime}>All Time</a>
+    
+    var sortRecentButton = <input type="button" id="view" value="30 Days" 
+      onClick={this.sortRecent}
+      className={this.state.sort == 'recent' ? 'active' : ''} />
+    var sortAllTimeButton = <input type="button" id="view" value="All Time" 
+      onClick={this.sortAllTime} 
+      className={this.state.sort == 'alltime' ? 'active' : ''} />
+
+    return (
+      <div>
+        <header>
+          <div className="row">
+            <div className="col left-col"><h2>Free Code Camp</h2></div>
+            <div className="col text-col right-col">
+            {sortRecentButton}
+            {sortAllTimeButton}
+            </div>
+          </div>
+        </header>
+        <main>
+          <div className="row stream offline">
+            <div className="col small">#</div>
+            <div className="col small"></div>
+            <div className="col medium stream">Camper Name</div>
+            <div className="col medium name">{sortRecentLink}</div>
+            <div className="col medium name">{sortAllTimeLink}</div>
+          </div>
+          {rows}
+          {console.log(this.state.recent)}
+        </main>
+      </div>
+    );
+  }
+};
+
+ReactDOM.render(
+  <Main />,
+  document.getElementById('target')
+);
+
+// https://www.sitepoint.com/javascript-generate-lighter-darker-color/
+function ColorLuminance(a,b){a=String(a).replace(/[^0-9a-f]/gi,""),a.length<6&&(a=a[0]+a[0]+a[1]+a[1]+a[2]+a[2]),b=b||0;var d,e,c="#";for(e=0;e<3;e++)d=parseInt(a.substr(2*e,2),16),d=Math.round(Math.min(Math.max(0,d+d*b),255)).toString(16),c+=("00"+d).substr(d.length);return c}
+</script>
+</head>
+<body>
+  <div id="target"></div>
+  <footer>Chad Sheets - FreeCodeCamp</footer>
+</body>
+</html>

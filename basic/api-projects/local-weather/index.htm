@@ -1,0 +1,94 @@
+<html>
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
+	<title>Chad Sheets - Local Weather</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<style>
+		body {
+      padding-top: 100px;
+      text-align: center;
+      font-family: Verdana;
+      font-size: 1.5em;
+      color: #FFFFFF;
+      text-shadow: 2px 2px 4px #000000;
+    }
+    img {
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+    }
+    a {
+      color: #FFFFFF;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+      cursor: pointer;
+    }
+	</style>
+  <script>
+  var tempDisplayInCelsius = false;
+  var tempInKelvin = 0;
+
+  function setTemp() {
+    if ( tempDisplayInCelsius ) {
+      return Math.round(tempInKelvin - 273.15);
+    }
+    return Math.round((tempInKelvin - 273.15) * 9 / 5 + 32);
+  }
+
+  $( document ).ready(function() {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      $.getJSON('http://api.openweathermap.org/data/2.5/weather?lat=' + position.coords.latitude +
+        '&lon=' + position.coords.longitude + '&APPID=05b4181a88dd1d44a14e45df0c9fc7d5', function(data) {
+        console.log(data.weather[0].icon.substr(0, 2));
+        tempInKelvin = data.main.temp;
+        $('span').text(setTemp());
+        switch (data.weather[0].icon.substr(0, 2)) {
+          case '03':
+          case '04':
+            $('img').attr('src', 'http://i.cjsheets.com/freecodecamp/weather/cloudy.jpg').fadeIn();
+            break;
+          case '09':
+          case '10':
+          case '11':
+            $('img').attr('src', 'http://i.cjsheets.com/freecodecamp/weather/rain.jpg').fadeIn();
+            break;
+          case '13':
+            $('img').attr('src', 'http://i.cjsheets.com/freecodecamp/weather/snow.jpg').fadeIn();
+            break;
+          case '50':
+          case '01':
+          case '02':
+          default:
+            $('img').attr('src', 'http://i.cjsheets.com/freecodecamp/weather/clear.jpg').fadeIn();
+            break;
+        }
+      });
+    });
+
+    $('a').click(function() {
+      if ( tempDisplayInCelsius ) {
+        tempDisplayInCelsius = false;
+        $('span').text(setTemp());
+        $('a').text('°F');
+      } else {
+        tempDisplayInCelsius = true;
+        $('span').text(setTemp());
+        $('a').text('°C');
+      }
+    });
+  });
+  </script>
+</head>
+<body>
+<img>
+<h1>Free Code Camp</h1>
+<h2>Weather App</h2>
+<h3><span></span> <a>°F</a></h3>
+</body>
+</html>

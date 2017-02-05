@@ -1,0 +1,83 @@
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+	<title>Chad Sheets - Wikipedia Viewer</title>
+  <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+  <script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js'></script>
+  <link rel='stylesheet' href='https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css'>
+	<style>
+		body {
+      text-align: center;
+      font-family: Lato,sans-serif,verdana;
+      color: #FFFFFF;
+      background: #006400;
+      font-size: 1.5em;
+    }
+    h1, h2 {
+      font-weight: normal;
+      text-shadow: 1px 1px 2px #000000;
+    }
+    .ui-button {
+      line-height: 25px;
+      font-size: 0.8em;
+    }
+    .ui-widget {
+      text-align: left;
+    }
+	</style>
+  <script>
+  $( document ).ready(function() {
+    $('#search').bind('input', function() {
+      if($('#search').val().length > 1){
+        $.ajax({
+          url: 'https://crossorigin.me/https://en.wikipedia.org/w/api.php',
+          dataType: 'jsonp',
+          data: {
+            action: 'query',
+            list: 'search',
+            srsearch: $('#search').val(),
+            srlimit: '10',
+            format: 'json'
+          },
+          success: function(data) {
+            var aryTitles = [];
+            $.each(data.query.search, function(index, obj) {
+              aryTitles.push(obj.title);
+            });
+            $('#search').autocomplete({
+              source: aryTitles,
+              delay: 500,
+              select: function(event, obj){
+                location.href = 'https://en.wikipedia.org/wiki/' + obj.item.value.replace(' ', '_');
+              }
+            });
+          }
+        });
+      }
+    });
+
+    $('#search').keypress(function (e) {
+      if(e.which == 13){
+        location.href = 'https://en.wikipedia.org/w/index.php?search=' + $('#search').val().replace(' ', '+');
+      }
+    });
+
+    $('#randArticle').click(function(event) {
+      event.preventDefault();
+      window.location = 'https://en.wikipedia.org/wiki/Special:Random';
+    });
+  });
+  </script>
+</head>
+<body>
+<img>
+<h1>Free Code Camp</h1>
+<h2>Wikipedia Viewer</h2>
+<br>
+<p><input class='ui-button ui-widget ui-corner-all' type='submit' id='randArticle' value='Random Article'></p>
+<p>-or-</p>
+<p><input class='ui-input ui-widget ui-corner-all' type='text' id='search' placeholder='Search Wikipedia'></p>
+
+</body>
+</html>

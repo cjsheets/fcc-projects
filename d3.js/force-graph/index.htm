@@ -1,0 +1,158 @@
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+  <title>Chad Sheets - Force Graph</title>
+<link rel='stylesheet' href='http://i.cjsheets.com/freecodecamp/datavis/flags.css'>
+<!-- https://cdnjs.cloudflare.com/ajax/libs/d3/4.3.0/d3.min.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.3.0/d3.min.js"></script>
+<style>
+body, a{
+  margin: 0px;
+  font: 11px sans-serif;
+  color: #000000;
+}
+div, svg {
+  margin: auto;
+}
+.links line {
+  stroke: #999;
+  stroke-opacity: 0.6;
+}
+.title text, .title-2 text, .title-3 text {
+  font: 25px sans-serif;
+  fill: #000;
+  text-anchor: middle;
+}
+.flags, .flag, #info {
+  position: absolute;
+}
+#info {
+  padding: 5px;
+  background: #333333;
+  color: #FFFFFF;
+  border-radius: 10px;
+}
+</style>
+</head>
+<body>
+<div class="target"></div>
+<div id="info"></div>
+<script>
+// http://bl.ocks.org/patricksurry/6621971
+var url = 'https://raw.githubusercontent.com/DealPete/forceDirected/master/countries.json';
+forceSim(url, '.target');
+
+function forceSim(url, target) {
+  'use strict';
+
+  var margin = {top: 100, right: 20, bottom: 20, left: 20},
+    width = window.innerWidth - margin.left - margin.right,
+    height = window.innerHeight - margin.top - margin.bottom,
+    svg = initSVG(target),
+    simulation = d3.forceSimulation();
+
+  appendTitle("Force Directed Graph of State Contiguity", width / 2, -40, "title");
+
+  d3.json(url, function(err,json) {
+    simulation = d3.forceSimulation()
+      .force("link", d3.forceLink().id(function(d, i) { return i; }))
+      .force("link", d3.forceLink().distance(function(d, i) { return 2; }))
+      .force("charge", d3.forceManyBody().strength(function(){ return -30; }))
+      .force("center", d3.forceCenter(width / 2, height / 2));
+
+    var link = svg.append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+      .attr("class", "links")
+      .selectAll("line")
+      .data(json.links)
+      .enter().append("line");
+
+    var node = svg.append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+      .attr("class", "nodes")
+      .select("g")
+      .data(json.nodes)
+      .enter().append("image")
+        .attr("class", function(d){ return "flag flag-" + d.code;})
+        .on("mouseover", function(d, i){ onMouseOver.call(this, d, i); })
+        .on("mouseout", function(d, i){ onMouseOut.call(this, d, i); })
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended));
+
+    simulation
+      .nodes(json.nodes)
+      .on("tick", ticked);
+
+    simulation.force("link")
+      .links(json.links);
+
+    function ticked() {
+      node
+        .style("left", function(d) { d.x = Math.max(margin.left, Math.min(width + margin.left, d.x));
+          return d.x + 'px' })
+        .style("top", function(d) { d.y = Math.max(margin.top, Math.min(height + margin.top, d.y - 8));
+          return d.y + 'px' });
+
+      link
+        .attr("x1", function(d) { return d.source.x - 2 * margin.left + 5; })
+        .attr("y1", function(d) { return d.source.y - 2 * margin.top + 8; })
+        .attr("x2", function(d) { return d.target.x - 2 * margin.left + 5; })
+        .attr("y2", function(d) { return d.target.y - 2 * margin.top + 8; });
+    }
+  });
+
+  function initSVG(target){
+    var svg = d3.select(target)
+      .append('svg')
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    return svg;
+  };
+
+  function onMouseOver(d, i){
+    d3.select('#info')
+      .style('left', (d3.event.pageX + 10) + 'px')
+      .style('top', (d3.event.pageY - 20) + 'px')
+      .text(d.country)
+      .style('visibility', 'visible');
+  };
+
+  function onMouseOut(d, i){
+    d3.select("#info")
+      .style("visibility", "hidden");
+  };
+
+  function dragstarted(d) {
+    if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+  };
+
+  function dragged(d) {
+    d.fx = d3.event.x;
+    d.fy = d3.event.y;
+  };
+
+  function dragended(d) {
+    if (!d3.event.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+  };
+
+  function appendTitle(txt, x, y, classname){
+    svg.append("g")
+      .attr("class", classname)
+      .append("text")
+        .attr("x", x)
+        .attr("y", y)
+        .text(txt);
+  };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:600);
+* {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+
+} body {
+      display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  font-family: Lato,sans-serif,verdana;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  background: #CCCCCC;
+
+} #target {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  align-content: stretch;
+
+} header, footer {
+  background: #3b5998;
+  color: #EEEEEE;
+  display: flex;
+  flex-direction: column;
+
+} .scoreboard {
+  background: #6d84b4;
+  border-top: 1px solid #4e5d7b;
+  border-bottom: 1px solid #4e5d7b;
+
+} .score {
+  padding: 8px 5px;
+  font-size: 0.8em;
+
+} main {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+} h2 {
+    padding: 8px 20px 4px;
+
+} .row {
+  display: flex;
+  /*flex-grow: 1;*/
+  flex-direction: row;
+  align-items: stretch;
+  align-content: stretch;
+  min-height: 10px;
+
+} .col {
+  flex: 1;
+  align-items: stretch;
+  align-content: stretch;
+
+} .right-col {
+  text-align: right; 
+
+} .left-col {
+  text-align: left;
+  color: #FFFFFF;
+
+} .cell {
+  background: #EFEFEF;
+  min-width: 10px;
+
+} .cell:before {
+  content: "";
+  display: block;
+  padding-top: 100%;
+
+} .wall {
+  background: #BBBBBB;
+
+} button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    margin: 20px 10px;
+    cursor: pointer;
+
+} button.lights {
+    background-color: #af3f3f;
+
+} .foot {
+  margin: auto;
+
+} footer {
+  padding: 5px 0px;
+  text-align: center;
+  font-size: 0.8em;
+
+
+} .type-0 { /* wall */
+    background-color: #666666;
+
+} .type-1 { /* empty */
+    background-color: #EFEFEF;
+
+} .type-2 { /* hero */
+    background-color: #0028aa;
+
+} .type-3 { /* XP */
+    background-color: #44aa3d;
+
+} .type-4 { /* Health */
+    background-color: #eac1e2;
+
+} .type-5, .type-6, .type-7,
+  .type-8, .type-9, .type-10 { /* weapons */
+    background-color: #aaa400;
+
+} .type-11, .type-12, .type-13, .type-14, .type-15,
+  .type-16, .type-17, .type-18, .type-19 { /* enemies */
+    background-color: #aa0000;
+
+} .type-20 { /* boss */
+    background-color: #aa3d9c;
+
+} .type-100 { /* black */
+    background-color: #000000;
+
+}

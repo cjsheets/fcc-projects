@@ -1,0 +1,136 @@
+<html>
+<head>
+<meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+<meta content='utf-8' http-equiv='encoding'>
+<title>Chad Sheets - Markdown Previewer</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<script src="https://unpkg.com/react@15.3.2/dist/react.min.js"></script>
+<script src="https://unpkg.com/react-dom@15.3.2/dist/react-dom.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.6/marked.min.js'></script>
+<script type='text/babel'>
+class ConvertMD extends React.Component{
+  constructor(props) {
+    super(props);    
+    this.state = {value: this.props.text, markdown: marked(this.props.text)};
+    this.handleChange = this.handleChange.bind(this);
+    this.createMarkup = this.createMarkup.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({value: event.target.value});
+    this.setState({markdown: marked(event.target.value)});
+  }
+
+  createMarkup() {
+    return {__html: this.state.markdown};
+  }
+
+  render() {
+    return (
+      <div class="site">
+        <div className="site left" id="md">
+        <textarea name="paste" rows="50" value={this.state.value} onChange={this.handleChange}></textarea>
+        </div><div className="site right" dangerouslySetInnerHTML={this.createMarkup()}></div>
+      </div>
+    );
+  }
+};
+
+ReactDOM.render(
+  <ConvertMD text={markdownExample} />,
+  document.getElementById('target')
+);
+</script>
+</head>
+<body>
+<div id="header">Markdown Preview</div>
+<div id="target"></div>
+<script>
+var markdownExample = `
+
+GitHub Flavored Markdown
+================================
+
+*View the [source of this content](http://github.github.com/github-flavored-markdown/sample_content.html).*
+
+Let's get the whole "linebreak" thing out of the way. The next paragraph contains two phrases separated by a single newline character:
+
+Roses are red
+Violets are blue
+
+The next paragraph has the same phrases, but now they are separated by two spaces and a newline character:
+
+Roses are red  
+Violets are blue
+
+
+
+Math is hard, let's go shopping
+-------------------------------
+
+In first grade I learned that 5 > 3 and 2 < 7. Maybe some arrows. 1 -> 2 -> 3. 9 <- 8 <- 7.
+
+Triangles man! a^2 + b^2 = c^2
+
+We all like making lists
+------------------------
+
+The above header should be an H2 tag. Now, for a list of fruits:
+
+* Red Apples
+* Purple Grapes
+* Green Kiwifruits
+
+
+
+
+Set in stone
+------------
+
+Preformatted blocks are useful for ASCII art:
+
+<pre>
+             ,-. 
+    ,     ,-.   ,-. 
+   / \   (   )-(   ) 
+   \ |  ,.>-(   )-< 
+    \|,' (   )-(   ) 
+     Y ___\`-'   \`-' 
+     |/__/   \`-' 
+     | 
+     | 
+     |    -hrr- 
+  ___|_____________ 
+</pre>
+
+
+
+Table for two
+-------------
+
+<table>
+  <tr>
+    <th>ID</th><th>Name</th><th>Rank</th>
+  </tr>
+  <tr>
+    <td>1</td><td>Tom Preston-Werner</td><td>Awesome</td>
+  </tr>
+  <tr>
+    <td>2</td><td>Albert Einstein</td><td>Nearly as awesome</td>
+  </tr>
+</table>
+
+
+Crazy linking action
+--------------------
+
+I get 10 times more traffic from [Google] [1] than from
+[Yahoo] [2] or [MSN] [3].
+
+  [1]: http://google.com/        "Google"
+  [2]: http://search.yahoo.com/  "Yahoo Search"
+  [3]: http://search.msn.com/    "MSN Search"`
+</script>
+</body>
+</html>

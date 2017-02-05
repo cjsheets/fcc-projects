@@ -1,0 +1,290 @@
+<html>
+<head>
+  <meta content='text/html;charset=utf-8' http-equiv='Content-Type'>
+  <meta content='utf-8' http-equiv='encoding'>
+  <title>Chad Sheets - Pomodoro</title>
+  <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+  <style>
+    @import url(https://fonts.googleapis.com/css?family=Pacifico|Open+Sans:300);
+    body {
+      font-family: Open Sans, Arial;
+      font-size: 3em;
+      font-weight: lighter;
+      color: #FCFCFC;
+      text-align: center;
+    } #outer, #inner {
+      border-radius: 50%;
+      border: 6px solid #141414;
+      margin: auto;
+    } #outer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: 320px;
+      height: 320px;
+      padding: 32px 42px 42px 32px;
+      background-color: #383838;
+    } #inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: #121212;
+      z-index: 600;
+    } #inner div {
+      padding-top: 60px;
+      cursor: pointer;
+    } #tr, #tl, #br, #bl {
+      font-size: 0.6em;
+      background-color: #222222;
+      position: absolute;
+      z-index: -9999;
+      width: 50%;
+      height: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    } #tr {
+      border-bottom: 6px solid #141414;
+      border-left: 6px solid #141414;
+      top: 0;
+      right: 0;
+    } #tl {
+      top: 0;
+      left: 0;
+    } #br {
+      bottom: 0;
+      right: 0;
+    } #bl {
+      bottom: 0;
+      left: 0;
+      border-top: 6px solid #141414;
+      border-right: 6px solid #141414;
+    } #status {
+      line-height: 75px;
+      font-size: 0.4em;
+      color: #999999;
+    /* -- CSS Animation */
+    } .wrapper {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: 320px;
+      height: 320px;
+      background: #383838;
+      border-radius: 50%;
+    } .wrapper, .wrapper * {
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+    } .wrapper {
+      width: 100%;
+      height: 100%;
+    } .wrapper .pie {
+      width: 50%;
+      height: 100%;
+      transform-origin: 100% 50%;
+      position: absolute;
+      background: #0088cc;
+      border: 5px solid rgba(0,0,0,0.5);
+    } .wrapper .spinner {
+      border-radius: 100% 0 0 100% / 50% 0 0 50%;
+      z-index: 200;
+      border-right: none;
+      animation: rota 5s linear infinite;
+    } .wrapper:hover .spinner,
+    .wrapper:hover .filler,
+    .wrapper:hover .mask {
+      animation-play-state: running;
+    }.wrapper .filler {
+      border-radius: 0 100% 100% 0 / 0 50% 50% 0;
+      left: 50%;
+      opacity: 0;
+      z-index: 100;
+      animation: opa 5s steps(1, end) infinite reverse;
+      border-left: none;
+    } .wrapper .mask {
+      width: 50%;
+      height: 100%;
+      position: absolute;
+      background: inherit;
+      opacity: 1;
+      z-index: 300;
+      animation: opa 5s steps(1, end) infinite;
+         border-radius: 197px 0 0 197px;
+         -moz-border-radius: 197px 0 0 197px;
+         -webkit-border-radius: 197px 0 0 197px;
+    } @keyframes rota {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    } @keyframes opa {
+      0% {
+        opacity: 1;
+      }
+      50%, 100% {
+        opacity: 0;
+      }
+    }
+  </style>
+  <script>
+  $.t = new Object();
+  $.t.running = false;
+  $.t.onBreak = false;
+  $.t.session = 25;
+  $.t.break = 5;
+  $.t.paused = 0;
+
+  $( document ).ready(function() {
+    $('#inner').click(function(){
+      if($.t.running){
+        stopAnimation();
+        $('#status').text('Paused');
+        $.t.running = false;
+        $.t.paused = getTime() - $.t.offset;
+      } else {
+        $('#status').text('-');
+        $.t.running = true;
+        if($.t.paused > 0){
+          $.t.offset = getTime() - $.t.paused;
+        } else {
+          $.t.offset = 0;
+          if(! $.t.onBreak){ $.t.target = getTime() + $.t.session * 60 * 1000;
+            } else { $.t.target = getTime() + $.t.break * 60 * 1000; }
+          setInterval(function() {updateClock();}, 250);
+          resetAnimation();
+        }
+        startAnimation();
+      }
+    });
+
+    $('#tr, #tl, #br, #bl').click(function () {
+      if(! $.t.running ) { switch($(this).attr('id')) {
+        case 'tr': $.t.session = $.t.session + 1; $.t.paused = 0;
+          $('#status').text('Session (' + $.t.session + ') + 1');
+          $('#clock').text($.t.session); break;
+        case 'tl': $.t.break = $.t.break + 1; $.t.paused = 0;
+          $('#status').text('Break (' + $.t.break + ') + 1');
+          $('#break').text($.t.break); break;
+        case 'br': $.t.session = $.t.session - 1; $.t.paused = 0;
+          $('#status').text('Session (' + $.t.session + ') - 1');
+          $('#clock').text($.t.session); break;
+        case 'bl': $.t.break = $.t.break - 1; $.t.paused = 0;
+          $('#status').text('Break (' + $.t.break + ') - 1');
+          $('#break').text($.t.break); break;
+        }
+      }
+    });
+
+    $('#tr, #tl, #br, #bl').hover(function () {
+        if(! $.t.running ) { $(this).css({"background-color":"#2c2c2c"});
+        switch($(this).attr('id')) {
+          case 'tr': $('#status').text('Session (' + $.t.session + ') + 1'); break;
+          case 'tl': $('#status').text('Break (' + $.t.break + ') + 1'); break;
+          case 'br': $('#status').text('Session (' + $.t.session + ') - 1'); break;
+          case 'bl': $('#status').text('Break (' + $.t.break + ') - 1'); break; } }},
+      function () { $(this).css({"background-color":"222222"}); 
+        $('#status').text(($.t.paused == 0) ? '-' : 'Paused'); });
+
+
+    $('#inner').hover(function () {
+        $(this).css({"background-color":"#1c1c1c"}); 
+        $('#status').text(($.t.running) ? 'Pause' : 'Start');  },
+        function () { $(this).css({"background-color":"121212"});
+        $('#status').text(($.t.paused == 0) ? '-' : 'Paused'); });
+
+    $('#clock').text($.t.session);
+    $('#break').hide();
+    stopAnimation();
+  });
+
+  function getTime() {
+    var date = new Date();
+    return date.getTime();
+   }
+
+  function updateClock() {
+    $.t.diff = $.t.target + $.t.offset - getTime();
+    var hr = parseInt($.t.diff / 1000 / 60 / 60);
+    var min = parseInt($.t.diff / 1000 / 60) - (hr * 60);
+    var sec = parseInt($.t.diff / 1000) - (min * 60);
+    hr = (hr > 0) ? hr + ':' : '';
+    min = (min > 0 || hr > 0) ? min + ':' : '';
+    sec = (sec > 0 || min > 0 || hr > 0) ? sec : '';
+    sec = (sec > 9) ? sec : '0' + sec;
+    if($.t.running){ 
+      $('#break').text(hr + min + sec);
+      $('#clock').text(hr + min + sec);
+    }
+    if (sec == 0 && min == 0 && hr == 0) { toggleBreak(); }
+   }
+
+  function toggleBreak() {
+    if($.t.onBreak){
+      $.t.onBreak = false;
+      $('#break').hide();
+      $('#clock').show();
+      $('#title').text('Session');
+      $('.wrapper .pie').css('background', '#0088cc');
+    } else {
+      $.t.onBreak = true;
+      $('#clock').hide();
+      $('#break').show();
+      $('#title').text('Break');
+      $('.wrapper .pie').css('background', '#00cc33');
+    }
+    $.t.running = false;
+    $.t.paused = 0;
+    $('#inner').click();
+  }
+
+  function startAnimation() {
+    $('.wrapper .spinner, .wrapper .filler, .wrapper .mask').css('animation-play-state', 'running');
+   }
+
+  function stopAnimation() {
+    $('.wrapper .spinner, .wrapper .filler, .wrapper .mask').css('animation-play-state', 'paused');
+   }
+
+  function resetAnimation() {
+    if($.t.onBreak){ time = $.t.break * 60;
+    } else { time = $.t.session * 60; }
+    $('.wrapper .spinner').css('animation', 'rota ' + time + 's linear 1');
+    $('.wrapper .filler').css('animation', 'opa ' + time + 's steps(1, end) 1 reverse');
+    $('.wrapper .mask').css('animation', 'opa ' + time + 's steps(1, end) 1');
+    var wrapper = $('.wrapper');
+    wrapper.before( wrapper.clone(true) ).remove();
+   }
+
+//    console.log(target + ' ' + diff);
+  </script>
+</head>
+<body>
+<div id='outer'>
+  <div id='inner'>
+    <div>
+      <span id='title'>Session</span><br>
+      <span id='status'>-</span><br>
+      <span id='clock'></span>
+      <span id='break'></span>
+    </div>
+  </div>
+  <div class="wrapper">
+    <div class="pie spinner"></div>
+    <div class="pie filler"></div>
+    <div class="mask"></div>
+  </div>
+</div>
+<div id='tl'>Break<br>+1</div>
+<div id='br'>Session<br>-1</div>
+<div id='tr'>Session<br>+1</div>
+<div id='bl'>Break<br>-1</div>
+</body>
+</html>

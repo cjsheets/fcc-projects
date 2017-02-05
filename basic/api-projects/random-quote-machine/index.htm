@@ -1,0 +1,67 @@
+<html>
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
+	<title>Chad Sheets - Random Quote Generator</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<style>
+		body {
+      padding-top: 200px;
+      text-align: center;
+    }
+    div{
+      margin: auto;
+      border-radius: 3px;
+    }
+    .quote-div{
+      max-width: 400;
+      background: white;
+      padding: 20px 20px 40px;
+    }
+    .quote-button{
+      width: 100px;
+      background: white;
+      padding: 10px;
+      display: inline;
+    }
+    small {
+      float: right;
+      margin: 10px;
+    }
+    a {
+      color: #000000;
+      text-decoration: none;
+    }
+	</style>
+  <script>
+
+  function setRandomColor() {
+    var hex = Math.floor(Math.random() * 0xFFFFFF);
+    var newColor = '#' + ('000000' + hex.toString(16)).substr(-6);
+    $('body').css('background', newColor);
+  }
+
+  function setTweetLink(tweet) {
+    $('#theTweet').attr('href', 'https://twitter.com/intent/tweet/?text=' + tweet.replace(/ /g,"%20"));
+  }
+
+  $( document ).ready(function() {
+    $('#theGenerator').click(function() {
+      $.getJSON("http://api.forismatic.com/api/1.0/?method=getQuote&format=jsonp&lang=en&jsonp=?", function(data) {
+        $('#theTarget').html(data.quoteText + '<br><small>- ' + data.quoteAuthor + '</small>');
+        setRandomColor();
+        setTweetLink(data.quoteText.substring(0, (140 - 3 - data.quoteAuthor.length)) + ' - ' + data.quoteAuthor);
+      });
+    });
+    $('#theGenerator').click();
+  });
+  </script>
+</head>
+<body>
+
+<div id="theTarget" class="quote-div"></div>
+<br>
+<a href="#" id="theGenerator"><div class="quote-button">New Quote</div></a>
+<a href="#" id="theTweet"><div class="quote-button">Tweet</div></a>
+</body>
+</html>
